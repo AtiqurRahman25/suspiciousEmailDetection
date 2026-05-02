@@ -6,7 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
 # Load dataset (Kaggle Format B: v1, v2)
-data = pd.read_csv("data/spam.csv", encoding="latin-1")
+data = pd.read_csv("D:\\Arvin\\suspiciousEmailDetection\\spam.csv", encoding="latin-1")
 
 # Rename columns properly
 data = data.rename(columns={'v1': 'label', 'v2': 'message'})
