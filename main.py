@@ -1,11 +1,12 @@
-from model import load_model, predict_spam
-from utils import contains_hate_speech
+from model import load_spam_model, load_hate_model
 
-# Load model
-model, vectorizer = load_model()
+spam_model, spam_vec = load_spam_model()
+hate_model, hate_vec = load_hate_model()
 
-print("=== Offline Message Detector ===")
-print("Type 'exit' to stop")
+def predict(model, vec, text):
+    return model.predict(vec.transform([text]))[0]
+
+print("=== Offline Detector ===")
 
 while True:
     text = input("\nEnter message: ")
@@ -13,12 +14,12 @@ while True:
     if text.lower() == "exit":
         break
 
-    # Step 1: Spam detection (ML)
-    if predict_spam(text, model, vectorizer) == 1:
+    # Spam check
+    if predict(spam_model, spam_vec, text) == 1:
         print("❌ Spam")
 
-    # Step 2: Hate speech detection (rules)
-    elif contains_hate_speech(text):
+    # Hate speech check
+    elif predict(hate_model, hate_vec, text) == 1:
         print("⚠️ Hate Speech")
 
     else:
