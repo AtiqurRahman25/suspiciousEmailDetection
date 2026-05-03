@@ -11,29 +11,43 @@ email_model, email_vec = load_email_model()
 def predict(model, vec, text):
     return model.predict(vec.transform([text]))[0]
 
-st.title("🔐 Offline Cybersecurity Detector")
-st.write("Detect Spam, Hate Speech, Phishing Emails & Malicious Links")
+def mask_text(text):
+    return "*" * len(text)
 
-text = st.text_area("Enter your message or email:")
+st.set_page_config(page_title="Cybersecurity Detector", page_icon="🔐")
 
-if st.button("Check"):
-    if text:
+st.title("🔐 Offline Message Security System")
+st.write("Detect Spam | Hate Speech | Phishing | Malicious Links")
 
-        # 1. Phishing email
-        if predict(email_model, email_vec, text) == 1:
+message = st.text_area("Enter message:")
+
+if st.button("Check Message"):
+
+    if message.strip() == "":
+        st.warning("Please enter a message.")
+    else:
+
+        # 1. Phishing Email
+        if predict(email_model, email_vec, message) == 1:
             st.error("⚠️ Phishing Email Detected")
+            st.code(mask_text(message))
 
         # 2. Spam
-        elif predict(spam_model, spam_vec, text) == 1:
-            st.error("❌ Spam Message")
+        elif predict(spam_model, spam_vec, message) == 1:
+            st.error("❌ Spam Message Detected")
+            st.code(mask_text(message))
 
-        # 3. Hate speech
-        elif predict(hate_model, hate_vec, text) == 1:
-            st.warning("⚠️ Hate Speech Detected")
+        # 3. Hate Speech
+        elif predict(hate_model, hate_vec, message) == 1:
+            st.error("⚠️ Hate Speech Detected")
+            st.code(mask_text(message))
 
         # 4. Malicious URL
-        elif is_malicious_url(text):
-            st.warning("⚠️ Malicious Link Detected")
+        elif is_malicious_url(message):
+            st.error("⚠️ Malicious Link Detected")
+            st.code(mask_text(message))
 
+        # 5. Safe message
         else:
             st.success("✅ Safe Message")
+            st.write(message)
