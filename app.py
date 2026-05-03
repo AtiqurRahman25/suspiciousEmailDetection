@@ -1,53 +1,78 @@
-import streamlit as st
+from flask import Flask, render_template, request
 
-from model import load_spam_model, load_hate_model, load_email_model
+from model import load_spam_model, load_email_model
 from utils import is_malicious_url
+from db import init_db, save_message
+from bert_model import predict_hate
 
-# Load models
+app = Flask(__name__)
+
+# Initialize DB
+init_db()
+
+# Load traditional ML models
 spam_model, spam_vec = load_spam_model()
-hate_model, hate_vec = load_hate_model()
 email_model, email_vec = load_email_model()
 
 def predict(model, vec, text):
     return model.predict(vec.transform([text]))[0]
 
-def mask_text(text):
-    return "*" * len(text)
+# Detect email-like content
+def looks_like_email(text):
+    text = text.lower()
+    keywords = ["http", "www", "@", "verify", "account", "login", "click"]
+    return any(word in text for word in keywords)
 
-st.set_page_config(page_title="Cybersecurity Detector", page_icon="🔐")
+# Hard rule-based violent detection
+def is_violent(text):
+    text = text.lower()
+    keywords = [
+        "kill", "murder", "die", "hurt", "attack",
+        "beat", "shoot", "destroy", "cut"
+    ]
+    return any(word in text for word in keywords)
 
-st.title("🔐 Offline Message Security System")
-st.write("Detect Spam | Hate Speech | Phishing | Malicious Links")
+@app.route("/", methods=["GET", "POST"])
+def index():
+    result = None
+    text = ""
+    masked = ""
 
-message = st.text_area("Enter message:")
+    if request.method == "POST":
+        text = request.form["message"]
 
-if st.button("Check Message"):
+        # 1. Hard rule (highest priority)
+        if is_violent(text):
+            result = "Hate / Violent Speech"
 
-    if message.strip() == "":
-        st.warning("Please enter a message.")
-    else:
+        # 2. BERT-based hate detection
+        elif predict_hate(text) == 1:
+            result = "Hate Speech"
 
-        # 1. Phishing Email
-        if predict(email_model, email_vec, message) == 1:
-            st.error("⚠️ Phishing Email Detected")
-            st.code(mask_text(message))
+        # 3. Phishing (only email-like)
+        elif looks_like_email(text) and predict(email_model, email_vec, text) == 1:
+            result = "Phishing Email"
 
-        # 2. Spam
-        elif predict(spam_model, spam_vec, message) == 1:
-            st.error("❌ Spam Message Detected")
-            st.code(mask_text(message))
+        # 4. Spam
+        elif predict(spam_model, spam_vec, text) == 1:
+            result = "Spam"
 
-        # 3. Hate Speech
-        elif predict(hate_model, hate_vec, message) == 1:
-            st.error("⚠️ Hate Speech Detected")
-            st.code(mask_text(message))
+        # 5. Malicious URL
+        elif is_malicious_url(text):
+            result = "Malicious Link"
 
-        # 4. Malicious URL
-        elif is_malicious_url(message):
-            st.error("⚠️ Malicious Link Detected")
-            st.code(mask_text(message))
-
-        # 5. Safe message
+        # 6. Safe
         else:
-            st.success("✅ Safe Message")
-            st.write(message)
+            result = "Safe"
+
+        # Mask unsafe content
+        if result != "Safe":
+            masked = "*" * len(text)
+
+        # Save to database
+        save_message(text, result)
+
+    return render_template("index.html", result=result, text=text, masked=masked)
+
+if __name__ == "__main__":
+    app.run(debug=True)
