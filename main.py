@@ -19,7 +19,7 @@ chat_instance = None
 
 @webapp.route('/')
 def index():
-    return "<h1>Forensic Client Connected</h1>"
+    return "<h1>Client Connected</h1>"
 
 @webapp.route('/send')
 def receive_from_web():
@@ -30,7 +30,7 @@ def receive_from_web():
     return "Data Processed"
 
 # --- KIVY MONITOR APP ---
-class PhishGuardApp(App):
+class PhishApp(App):
     def build(self):
         Window.clearcolor = (0.05, 0.05, 0.05, 1)
         self.title = "Forensic Monitoring System"
@@ -131,4 +131,4 @@ class PhishGuardApp(App):
         webapp.run(host='0.0.0.0', port=8080, debug=False)
 
 if __name__ == "__main__":
-    PhishGuardApp().run()
+    PhishApp().run()
