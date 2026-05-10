@@ -2,7 +2,7 @@ import pandas as pd
 import pickle
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier # Changed from LinearSVC
+from sklearn.ensemble import RandomForestClassifier
 
 # Load dataset
 data = pd.read_csv(r"D:\Arvin\suspiciousEmailDetection\datasets\CEAS_08.csv")
